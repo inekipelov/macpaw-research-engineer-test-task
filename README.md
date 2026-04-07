@@ -58,6 +58,12 @@ Example command-line run after building:
   --model-path /Users/you/Models/Llama-3.2-1B-Instruct-4bit
 ```
 
+You can also launch the CLI with no parameters. In that mode it will:
+
+- show recently used model paths from local history
+- let you pick a previous model
+- or let you enter a new model path interactively
+
 Optional flags:
 
 - `--max-tokens <int>` default `256`
@@ -85,6 +91,7 @@ Available commands:
 
 - `/help` shows usage and command help
 - `/config` prints the effective runtime configuration
+- `close` returns from the current chat session back to the model selection menu
 - `/exit` exits the session
 
 Exit shortcuts:
@@ -96,6 +103,9 @@ Exit shortcuts:
 Each prompt is handled independently. The app does not store conversation history;
 it simply forwards the current prompt to `LocalMLXChatCore` and streams chunks back
 to the terminal.
+
+The app does store model selection history between launches using `UserDefaults`, so
+you can reopen the CLI and quickly return to recently used local models.
 
 ## Example Session
 
@@ -116,13 +126,19 @@ you> /exit
 
 ## Testing
 
-Automated tests cover:
+The Xcode project includes a unit test target: `MacPawCLI-Tests`.
 
-- argument parsing and validation
-- slash command parsing
-- REPL control flow
-- streamed output rendering
-- error presentation behavior
+Run it from Xcode or from the command line:
 
-The current repository is Xcode-first. If you want executable automated tests inside the project,
-the next step is to add an Xcode test target and attach the existing test files to it.
+```bash
+xcodebuild -project MacPawCLI.xcodeproj -scheme MacPawCLI-Tests test
+```
+
+Automated coverage includes:
+
+- launch option parsing and validation
+- runtime configuration formatting
+- model history persistence
+- model selection coordinator flow
+- chat command parsing
+- chat session control flow, including `close`

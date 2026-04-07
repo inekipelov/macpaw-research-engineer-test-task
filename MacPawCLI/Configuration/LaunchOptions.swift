@@ -1,16 +1,20 @@
 import Foundation
 import LocalMLXChatCore
 
-struct CLIConfiguration: Equatable {
-    let modelPath: URL
+struct LaunchOptions: Equatable {
+    let initialModelPath: URL?
     let generationOptions: GenerationOptions
     let contextWindowOverride: Int?
+
+    static var usageText: String {
+        CLIConfiguration.usageText
+    }
 
     static func make(
         arguments: [String],
         fileSystem: FileSystem = LocalFileSystem()
-    ) throws -> CLIConfiguration {
-        var modelPath: String?
+    ) throws -> LaunchOptions {
+        var modelPath: URL?
         var maxTokens = 256
         var temperature = 0.7
         var topP = 0.95
@@ -22,7 +26,8 @@ struct CLIConfiguration: Equatable {
             let argument = arguments[index]
             switch argument {
             case "--model-path":
-                modelPath = try value(after: argument, in: arguments, index: &index)
+                let value = try value(after: argument, in: arguments, index: &index)
+                modelPath = URL(filePath: value)
             case "--max-tokens":
                 let value = try value(after: argument, in: arguments, index: &index)
                 maxTokens = try parsePositiveInteger(value, option: argument)
@@ -45,17 +50,12 @@ struct CLIConfiguration: Equatable {
             index += 1
         }
 
-        guard let modelPath else {
-            throw CLIConfigurationError.missingRequiredOption("--model-path")
+        if let modelPath, !fileSystem.directoryExists(at: modelPath) {
+            throw CLIConfigurationError.invalidModelPath(modelPath.path)
         }
 
-        let modelURL = URL(filePath: modelPath)
-        guard fileSystem.directoryExists(at: modelURL) else {
-            throw CLIConfigurationError.invalidModelPath(modelURL.path)
-        }
-
-        return CLIConfiguration(
-            modelPath: modelURL,
+        return LaunchOptions(
+            initialModelPath: modelPath,
             generationOptions: GenerationOptions(
                 maxTokens: maxTokens,
                 temperature: temperature,
@@ -66,42 +66,12 @@ struct CLIConfiguration: Equatable {
         )
     }
 
-    var localModelConfiguration: LocalModelConfiguration {
-        LocalModelConfiguration(
+    func configuration(for modelPath: URL) -> CLIConfiguration {
+        CLIConfiguration(
             modelPath: modelPath,
-            contextWindowOverride: contextWindowOverride,
-            defaultGenerationOptions: generationOptions
+            generationOptions: generationOptions,
+            contextWindowOverride: contextWindowOverride
         )
-    }
-
-    var formattedDescription: String {
-        [
-            "modelPath: \(modelPath.path)",
-            "maxTokens: \(generationOptions.maxTokens ?? 256)",
-            "temperature: \(generationOptions.temperature ?? 0.7)",
-            "topP: \(generationOptions.topP ?? 1.0)",
-            "seed: \(generationOptions.seed.map(String.init) ?? "none")",
-            "contextWindow: \(contextWindowOverride.map(String.init) ?? "none")"
-        ].joined(separator: "\n")
-    }
-
-    static var usageText: String {
-        """
-        Usage: MacPawCLI --model-path <path> [options]
-
-        Options:
-          --model-path <path>       Local MLX model directory (required)
-          --max-tokens <int>        Maximum output tokens (default: 256)
-          --temperature <double>    Sampling temperature (default: 0.7)
-          --top-p <double>          Nucleus sampling value (default: 0.95)
-          --seed <int>              Optional deterministic seed
-          --context-window <int>    Optional context window override
-
-        REPL commands:
-          /help                     Show help
-          /config                   Show effective configuration
-          /exit                     Exit the session
-        """
     }
 
     private static func value(
@@ -113,6 +83,7 @@ struct CLIConfiguration: Equatable {
         guard nextIndex < arguments.count else {
             throw CLIConfigurationError.missingValue(option)
         }
+
         index = nextIndex
         return arguments[nextIndex]
     }
@@ -155,51 +126,5 @@ struct CLIConfiguration: Equatable {
             throw CLIConfigurationError.nonPositiveValue(option: option, value: value)
         }
         return double
-    }
-}
-
-enum CLIConfigurationError: Error, Equatable {
-    case missingRequiredOption(String)
-    case missingValue(String)
-    case invalidInteger(option: String, value: String)
-    case invalidDouble(option: String, value: String)
-    case negativeValue(option: String, value: String)
-    case nonPositiveValue(option: String, value: String)
-    case invalidModelPath(String)
-    case unknownOption(String)
-
-    var message: String {
-        switch self {
-        case .missingRequiredOption(let option):
-            return "Missing required option: \(option)"
-        case .missingValue(let option):
-            return "Missing value for option: \(option)"
-        case .invalidInteger(let option, let value):
-            return "Invalid integer for \(option): \(value)"
-        case .invalidDouble(let option, let value):
-            return "Invalid number for \(option): \(value)"
-        case .negativeValue(let option, let value):
-            return "Value for \(option) cannot be negative: \(value)"
-        case .nonPositiveValue(let option, let value):
-            return "Value for \(option) must be greater than zero: \(value)"
-        case .invalidModelPath(let path):
-            return "Model path is invalid or not a directory: \(path)"
-        case .unknownOption(let option):
-            return "Unknown option: \(option)"
-        }
-    }
-}
-
-protocol FileSystem {
-    func directoryExists(at url: URL) -> Bool
-}
-
-struct LocalFileSystem: FileSystem {
-    private let fileManager = FileManager.default
-
-    func directoryExists(at url: URL) -> Bool {
-        var isDirectory = ObjCBool(false)
-        let exists = fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory)
-        return exists && isDirectory.boolValue
     }
 }

@@ -4,6 +4,7 @@ enum ChatCommand: Equatable {
     case prompt(String)
     case help
     case config
+    case close
     case exit
 
     static func parse(line: String) -> ChatCommand? {
@@ -15,6 +16,8 @@ enum ChatCommand: Equatable {
             return .help
         case "/config":
             return .config
+        case "close", "/close":
+            return .close
         case "/exit", "exit", "quit":
             return .exit
         default:

@@ -1,6 +1,12 @@
 import Foundation
 import LocalMLXChatCore
 
+enum ChatSessionResult: Equatable {
+    case close
+    case exit
+    case startupFailure
+}
+
 final class ChatSession {
     private let configuration: CLIConfiguration
     private let service: ChatService
@@ -12,9 +18,9 @@ final class ChatSession {
         self.terminal = terminal
     }
 
-    func run() async -> Int32 {
-        terminal.writeLine("MacPawChatCLI")
-        terminal.writeLine("Type /help for commands or /exit to quit.")
+    func run() async -> ChatSessionResult {
+        terminal.writeLine("Chat ready for \(configuration.modelPath.lastPathComponent).")
+        terminal.writeLine("Type /help for commands, close to change model, or /exit to quit.")
 
         var hasSuccessfulPrompt = false
 
@@ -28,8 +34,10 @@ final class ChatSession {
                 terminal.writeLine(CLIConfiguration.usageText)
             case .config:
                 terminal.writeLine(configuration.formattedDescription)
+            case .close:
+                return .close
             case .exit:
-                return 0
+                return .exit
             case .prompt(let prompt):
                 let outcome = await handlePrompt(prompt, hasSuccessfulPrompt: hasSuccessfulPrompt)
                 switch outcome {
@@ -37,45 +45,47 @@ final class ChatSession {
                     hasSuccessfulPrompt = true
                 case .continueSession:
                     continue
-                case .exitFailure:
-                    return 1
+                case .closeSession:
+                    return .close
+                case .startupFailure:
+                    return .startupFailure
                 }
             }
         }
 
-        return 0
+        return .exit
     }
 
     private func handlePrompt(_ prompt: String, hasSuccessfulPrompt: Bool) async -> PromptOutcome {
-        var didWriteAssistantPrefix = false
+        var wroteAssistantPrefix = false
 
         for await event in service.stream(prompt: prompt) {
             switch event {
             case .chunk(let chunk):
-                if !didWriteAssistantPrefix {
+                if !wroteAssistantPrefix {
                     terminal.write("assistant> ")
-                    didWriteAssistantPrefix = true
+                    wroteAssistantPrefix = true
                 }
                 terminal.write(chunk)
             case .finished:
-                if didWriteAssistantPrefix {
+                if wroteAssistantPrefix {
                     terminal.write("\n")
                 } else {
                     terminal.writeLine("assistant> ")
                 }
                 return .success
             case .failed(let error):
-                if didWriteAssistantPrefix {
+                if wroteAssistantPrefix {
                     terminal.write("\n")
                 }
 
                 switch error {
                 case .invalidModelPath:
                     terminal.writeErrorLine(error.userFacingMessage)
-                    return .exitFailure
+                    return .closeSession
                 case .modelLoadFailed:
                     terminal.writeLine(error.userFacingMessage)
-                    return hasSuccessfulPrompt ? .continueSession : .exitFailure
+                    return hasSuccessfulPrompt ? .closeSession : .startupFailure
                 case .contextWindowExceeded, .inferenceFailed:
                     terminal.writeLine(error.userFacingMessage)
                     return .continueSession
@@ -90,5 +100,6 @@ final class ChatSession {
 private enum PromptOutcome {
     case success
     case continueSession
-    case exitFailure
+    case closeSession
+    case startupFailure
 }
