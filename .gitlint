@@ -1,0 +1,14 @@
+[general]
+ignore=merge-commit,fixup-commit,squash-commit,revert-commit,B6
+
+[title-max-length]
+line-length=100
+
+[body-max-line-length]
+line-length=120
+
+[title-match-regex]
+regex=^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|hotfix|release)(\([a-z0-9][a-z0-9._/-]*\))?!?: [a-z0-9].{2,78}$
+
+[title-must-not-contain-word]
+words=wip
