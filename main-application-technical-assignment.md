@@ -2,12 +2,12 @@
 
 ## Goal
 
-Build a minimal macOS CLI chat client that interacts with a separate Swift Package (`SPM LLM module`) to run local inference.
+Build a minimal macOS SwiftUI chat client that interacts with a separate Swift Package (`SPM LLM module`) to run local inference.
 
 ## Scope
 
 - Platform: macOS
-- App type: Swift CLI only
+- App type: SwiftUI macOS only
 - Responsibility boundary:
   - **Main app** handles user interaction only
   - **No MLX/model logic** in this repository
@@ -15,6 +15,8 @@ Build a minimal macOS CLI chat client that interacts with a separate Swift Packa
 ## Functional Requirements
 
 1. Implement a working chat flow:
+   - register an already-downloaded local LLM
+   - select a previously used local LLM from history
    - receive user prompt
    - send prompt to SPM LLM module API
    - display assistant response as a stream (progressive output)
