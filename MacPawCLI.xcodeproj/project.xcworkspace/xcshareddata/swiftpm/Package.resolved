@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/inekipelov/local-mlx-chat-core.git",
       "state" : {
-        "revision" : "3242df3e2e0eec8ff8f25d281e1ce32e52c68d27",
-        "version" : "0.2.0"
+        "revision" : "179e3266d84fe3b033fe685d33e50b494ba3e769",
+        "version" : "0.2.1"
       }
     },
     {

@@ -433,7 +433,7 @@
 			repositoryURL = "https://github.com/inekipelov/local-mlx-chat-core.git";
 			requirement = {
 				kind = exactVersion;
-				version = 0.2.0;
+				version = 0.2.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
