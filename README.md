@@ -7,12 +7,10 @@ Minimal macOS SwiftUI app for running local chats with a model provided by
 
 - install a local LLM by selecting an existing model folder on disk
 - keep a local history of installed and recently used models
-- store advanced parameters per model:
-  - `maxTokens`
-  - `temperature`
-  - `topP`
-  - `seed`
-  - `contextWindow`
+- store a response preset per model:
+  - `fast`
+  - `balanced`
+  - `precise`
 - open an in-app chat named after the selected model
 - stream assistant output progressively in the chat UI
 
@@ -20,7 +18,7 @@ The app owns:
 
 - SwiftUI user interface
 - local persistence
-- model selection and parameter editing
+- model selection and preset editing
 - chat state and streaming presentation
 
 `LocalMLXChatCore` owns:
@@ -62,11 +60,11 @@ xcodebuild -project MacPawCLI.xcodeproj -scheme MacPawAppTests test
 1. Launch the app.
 2. Click `Install Local Model…`.
 3. Choose an already-downloaded model folder.
-4. Adjust advanced parameters for that model.
+4. Choose a response preset for that model.
 5. Click `Open Chat`.
 6. Send prompts and receive a progressively streamed response.
 
-Installed models and their parameters are stored locally in Application Support.
+Installed models and their selected presets are stored locally in Application Support.
 No model weights are committed to the repository.
 
 ## Architecture

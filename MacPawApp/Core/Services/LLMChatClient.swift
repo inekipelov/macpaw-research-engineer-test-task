@@ -24,13 +24,7 @@ struct LLMChatClient {
             let client = LocalModelClient(
                 configuration: LocalModelConfiguration(
                     modelPath: URL(filePath: model.modelPath),
-                    contextWindowOverride: model.parameters.contextWindow,
-                    defaultGenerationOptions: GenerationOptions(
-                        maxTokens: model.parameters.maxTokens,
-                        temperature: model.parameters.temperature,
-                        topP: model.parameters.topP,
-                        seed: model.parameters.seed.map(UInt64.init)
-                    )
+                    generationPreset: model.generationPreset.packagePreset
                 )
             )
 

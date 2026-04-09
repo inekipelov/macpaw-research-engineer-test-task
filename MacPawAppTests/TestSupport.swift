@@ -11,13 +11,13 @@ func makeInstalledModel(
     name: String = "Llama-3.2-1B",
     path: String = "/Models/Llama-3.2-1B",
     lastUsedAt: Date = .now,
-    parameters: ModelParameters = .defaults
+    generationPreset: ModelPreset = .balanced
 ) -> InstalledModel {
     InstalledModel(
         id: UUID(),
         displayName: name,
         modelPath: path,
         lastUsedAt: lastUsedAt,
-        parameters: parameters
+        generationPreset: generationPreset
     )
 }

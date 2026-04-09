@@ -18,5 +18,6 @@ struct LibraryViewModelTests {
 
         let models = viewModel.models
         #expect(models.first?.displayName == "Llama-3.2-1B")
+        #expect(models.first?.generationPreset == .balanced)
     }
 }

@@ -4,24 +4,21 @@ import Testing
 @MainActor
 struct ModelSetupViewModelTests {
     @Test
-    func updatingParametersPersistsToSelectedModel() throws {
+    func updatingPresetPersistsToSelectedModel() throws {
         let model = makeInstalledModel()
         let viewModel = ModelSetupViewModel(model: model)
-        viewModel.maxTokensText = "512"
+        viewModel.selectedPreset = .precise
 
-        let updated = try viewModel.buildUpdatedModel()
+        let updated = viewModel.buildUpdatedModel()
 
-        #expect(updated.parameters.maxTokens == 512)
+        #expect(updated.generationPreset == .precise)
     }
 
     @Test
-    func rejectsInvalidTopPValues() {
+    func initializesSelectedPresetFromModel() {
         let model = makeInstalledModel()
         let viewModel = ModelSetupViewModel(model: model)
-        viewModel.topPText = "5"
 
-        #expect(throws: ModelSetupValidationError.invalidTopP) {
-            try viewModel.buildUpdatedModel()
-        }
+        #expect(viewModel.selectedPreset == .balanced)
     }
 }

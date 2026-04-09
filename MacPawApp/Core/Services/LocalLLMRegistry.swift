@@ -47,30 +47,29 @@ struct LocalLLMRegistry {
 
     static func live(
         store: InstalledModelStore,
-        fileManager: FileManager = .default,
-        dateProvider: @escaping @Sendable () -> Date = Date.init
+        dateProvider: @escaping @Sendable () -> Date = { .now }
     ) -> LocalLLMRegistry {
         LocalLLMRegistry(
             loadModels: {
                 try store.loadModels().sorted { $0.lastUsedAt > $1.lastUsedAt }
             },
             installModel: { url in
-                try validateModelDirectory(url, fileManager: fileManager)
+                try validateModelDirectory(url)
 
-                var models = try store.loadModels().filter { $0.modelPath != url.path }
+                var models = try loadModelsForMutation(from: store).filter { $0.modelPath != url.path }
                 let model = InstalledModel(
                     id: UUID(),
                     displayName: url.lastPathComponent,
                     modelPath: url.path,
                     lastUsedAt: dateProvider(),
-                    parameters: .defaults
+                    generationPreset: .default
                 )
                 models.insert(model, at: 0)
                 try store.saveModels(models)
                 return model
             },
             updateModel: { model in
-                var models = try store.loadModels()
+                var models = try loadModelsForMutation(from: store)
                 models.removeAll { $0.id == model.id }
                 models.insert(model, at: 0)
                 models.sort { $0.lastUsedAt > $1.lastUsedAt }
@@ -78,7 +77,7 @@ struct LocalLLMRegistry {
                 return model
             },
             removeModel: { id in
-                let models = try store.loadModels().filter { $0.id != id }
+                let models = try loadModelsForMutation(from: store).filter { $0.id != id }
                 try store.saveModels(models)
             }
         )
@@ -92,17 +91,25 @@ struct LocalLLMRegistry {
                 displayName: url.lastPathComponent,
                 modelPath: url.path,
                 lastUsedAt: .now,
-                parameters: .defaults
+                generationPreset: .default
             )
         },
         updateModel: { $0 },
         removeModel: { _ in }
     )
 
-    private static func validateModelDirectory(_ url: URL, fileManager: FileManager) throws {
-        var isDirectory = ObjCBool(false)
-        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+    private static func validateModelDirectory(_ url: URL) throws {
+        let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
+        guard values?.isDirectory == true else {
             throw LocalLLMRegistryError.invalidModelDirectory(url.path)
+        }
+    }
+
+    private static func loadModelsForMutation(from store: InstalledModelStore) throws -> [InstalledModel] {
+        do {
+            return try store.loadModels()
+        } catch is DecodingError {
+            return []
         }
     }
 }

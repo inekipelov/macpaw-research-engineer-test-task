@@ -13,6 +13,10 @@ struct RootViewState: Equatable {
 
         return model.displayName
     }
+
+    mutating func closeChat() {
+        chattingModelID = nil
+    }
 }
 
 struct RootView: View {
@@ -49,14 +53,15 @@ struct RootView: View {
 
         if let selectedModel = libraryViewModel.selectedModel {
             if state.activeChatTitle != nil {
-                ChatView(model: selectedModel, client: environment.chatClient)
+                ChatView(
+                    model: selectedModel,
+                    client: environment.chatClient,
+                    onClose: closeChat
+                )
                     .id(selectedModel.id)
             } else {
                 ModelSetupView(
                     model: selectedModel,
-                    onSave: { updatedModel in
-                        _ = try await libraryViewModel.updateModel(updatedModel)
-                    },
                     onOpenChat: { updatedModel in
                         var openedModel = updatedModel
                         openedModel.lastUsedAt = .now
@@ -73,5 +78,17 @@ struct RootView: View {
                 description: Text("Choose an installed model from the sidebar or add a new local LLM folder.")
             )
         }
+    }
+
+    private func closeChat() {
+        let updatedState = RootViewState(
+            models: libraryViewModel.models,
+            selectedModelID: libraryViewModel.selectedModelID,
+            chattingModelID: chattingModelID
+        )
+
+        var state = updatedState
+        state.closeChat()
+        chattingModelID = state.chattingModelID
     }
 }

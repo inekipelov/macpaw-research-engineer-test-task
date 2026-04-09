@@ -2,11 +2,13 @@ import SwiftUI
 
 struct ChatView: View {
     let model: InstalledModel
+    let onClose: () -> Void
 
     @StateObject private var viewModel: ChatViewModel
 
-    init(model: InstalledModel, client: LLMChatClient) {
+    init(model: InstalledModel, client: LLMChatClient, onClose: @escaping () -> Void) {
         self.model = model
+        self.onClose = onClose
         _viewModel = StateObject(wrappedValue: ChatViewModel(model: model, client: client))
     }
 
@@ -54,6 +56,12 @@ struct ChatView: View {
             .padding(20)
         }
         .navigationTitle(model.displayName)
+        .toolbar {
+            ToolbarItem {
+                Button("Close Chat", systemImage: "xmark.circle", action: onClose)
+                    .help("Close the current chat and return to model setup")
+            }
+        }
         .onDisappear {
             viewModel.cancelStreaming()
         }
